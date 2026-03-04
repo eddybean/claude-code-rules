@@ -40,7 +40,10 @@ export async function manageCommand(): Promise<void> {
     });
     if (p.isCancel(selected)) break;
 
-    const [locationStr, filename] = (selected as string).split(':') as [string, string];
+    const selectedStr = selected as string;
+    const colonIdx = selectedStr.indexOf(':');
+    const locationStr = selectedStr.slice(0, colonIdx);
+    const filename = selectedStr.slice(colonIdx + 1);
     const location = locationStr as RuleLocation;
     const otherLocation: RuleLocation = location === 'workspace' ? 'user' : 'workspace';
     const otherLabel = t(

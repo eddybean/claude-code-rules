@@ -2,6 +2,16 @@ import { t } from '../i18n/index.js';
 import type { GitHubFileContent, GitHubFileEntry, Rule } from '../types.js';
 import { parseFrontmatter } from '../utils/frontmatter.js';
 
+class GitHubApiError extends Error {
+  constructor(
+    public readonly status: number,
+    message: string,
+  ) {
+    super(message);
+    this.name = 'GitHubApiError';
+  }
+}
+
 function parseGitHubUrl(url: string): { owner: string; repo: string } | null {
   const match = url.match(/github\.com\/([^/]+)\/([^/]+)/);
   if (!match) return null;
@@ -9,18 +19,25 @@ function parseGitHubUrl(url: string): { owner: string; repo: string } | null {
 }
 
 async function githubFetch<T>(url: string): Promise<T> {
-  const res = await fetch(url, {
-    headers: {
-      Accept: 'application/vnd.github+json',
-      'User-Agent': 'claude-code-rules',
-    },
-  });
+  const headers: Record<string, string> = {
+    Accept: 'application/vnd.github+json',
+    'User-Agent': 'claude-code-rules',
+  };
+  const token = process.env.GITHUB_TOKEN;
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
 
-  if (res.status === 403 || res.status === 401) {
-    throw new Error(t('github.rateLimited'));
+  const res = await fetch(url, { headers });
+
+  if (res.status === 401) {
+    throw new GitHubApiError(401, t('github.unauthorized'));
+  }
+  if (res.status === 403) {
+    throw new GitHubApiError(403, t('github.rateLimited'));
   }
   if (!res.ok) {
-    throw new Error(`${t('github.apiError')} ${res.status} ${res.statusText}`);
+    throw new GitHubApiError(res.status, `${t('github.apiError')} ${res.status} ${res.statusText}`);
   }
   return res.json() as Promise<T>;
 }
@@ -32,7 +49,7 @@ async function fetchRulesFromPath(owner: string, repo: string, rulesPath: string
   try {
     entries = await githubFetch<GitHubFileEntry[]>(apiUrl);
   } catch (err) {
-    if (err instanceof Error && err.message.includes('404')) {
+    if (err instanceof GitHubApiError && err.status === 404) {
       return [];
     }
     throw err;

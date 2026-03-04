@@ -125,6 +125,51 @@ describe('listGithubRules', () => {
     await expect(listGithubRules('https://github.com/owner/repo')).rejects.toThrow();
   });
 
+  it('401 と 403 は異なるエラーメッセージをスローする', async () => {
+    const { listGithubRules } = await import('../../sources/github.js');
+
+    mockFetch.mockResolvedValue(makeErrorResponse(401, 'Unauthorized'));
+    const err401 = await listGithubRules('https://github.com/owner/repo').catch((e) => e);
+
+    vi.resetModules();
+    vi.stubGlobal('fetch', mockFetch);
+    const { listGithubRules: listGithubRules2 } = await import('../../sources/github.js');
+    mockFetch.mockResolvedValue(makeErrorResponse(403, 'Forbidden'));
+    const err403 = await listGithubRules2('https://github.com/owner/repo').catch((e) => e);
+
+    expect(err401.message).not.toBe(err403.message);
+  });
+
+  it('GITHUB_TOKEN が設定されている場合は Authorization ヘッダーを送信する', async () => {
+    vi.stubEnv('GITHUB_TOKEN', 'test-token');
+    mockFetch
+      .mockResolvedValueOnce(makeJsonResponse([]))
+      .mockResolvedValueOnce(makeJsonResponse([]));
+
+    const { listGithubRules } = await import('../../sources/github.js');
+    await listGithubRules('https://github.com/owner/repo');
+
+    expect(mockFetch).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.objectContaining({
+        headers: expect.objectContaining({ Authorization: 'Bearer test-token' }),
+      }),
+    );
+  });
+
+  it('GITHUB_TOKEN が未設定の場合は Authorization ヘッダーを送信しない', async () => {
+    delete process.env.GITHUB_TOKEN;
+    mockFetch
+      .mockResolvedValueOnce(makeJsonResponse([]))
+      .mockResolvedValueOnce(makeJsonResponse([]));
+
+    const { listGithubRules } = await import('../../sources/github.js');
+    await listGithubRules('https://github.com/owner/repo');
+
+    const callArgs = mockFetch.mock.calls[0][1] as RequestInit;
+    expect((callArgs.headers as Record<string, string>).Authorization).toBeUndefined();
+  });
+
   it('rules/ が 404 の場合は空配列として扱いエラーをスローしない', async () => {
     mockFetch
       .mockResolvedValueOnce(makeErrorResponse(404, 'Not Found')) // rules/ が存在しない

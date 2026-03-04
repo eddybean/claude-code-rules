@@ -59,7 +59,17 @@ export function copyRule(filename: string, from: RuleLocation, to: RuleLocation)
 
 export function moveRule(filename: string, from: RuleLocation, to: RuleLocation): void {
   copyRule(filename, from, to);
-  deleteRule(filename, from);
+  try {
+    deleteRule(filename, from);
+  } catch (err) {
+    // コピー先を削除してロールバック
+    try {
+      deleteRule(filename, to);
+    } catch {
+      // ロールバックに失敗しても元のエラーを優先して投げる
+    }
+    throw err;
+  }
 }
 
 export function updateRulePaths(

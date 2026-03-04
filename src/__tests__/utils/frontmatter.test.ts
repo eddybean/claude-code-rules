@@ -29,6 +29,15 @@ describe('parseFrontmatter', () => {
     expect(result.body).toBe('# Rule\n\nBody.');
   });
 
+  it('フォールバック時にクォートされた paths から末尾クォートが残らない', () => {
+    // gray-matter が失敗した場合の正規表現フォールバックでクォートペアを正しく除去する
+    // parseFrontmatter を直接テストするため、gray-matter がエラーを投げるコンテンツを使用
+    const content = '---\npaths: src/*/backend/**\n---\n# Rule';
+    const result = parseFrontmatter(content);
+    expect(result.paths).toBe('src/*/backend/**');
+    expect(result.paths).not.toMatch(/["']$/);
+  });
+
   it('空のコンテンツは空の body を返す', () => {
     const result = parseFrontmatter('');
     expect(result.body).toBe('');

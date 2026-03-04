@@ -1,4 +1,4 @@
-import { existsSync } from 'node:fs';
+import { existsSync, statSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { dirname, join } from 'node:path';
 import type { RuleLocation } from '../types.js';
@@ -6,7 +6,8 @@ import type { RuleLocation } from '../types.js';
 export function findWorkspaceRoot(startDir: string = process.cwd()): string | null {
   let current = startDir;
   while (true) {
-    if (existsSync(join(current, '.claude'))) {
+    const claudePath = join(current, '.claude');
+    if (existsSync(claudePath) && statSync(claudePath).isDirectory()) {
       return current;
     }
     const parent = dirname(current);

@@ -17,12 +17,14 @@ Claude Code dynamically loads `.md` files placed under `.claude/rules/` in your 
 ## Installation
 
 ```bash
-npm install -g claude-code-rules
+npm install -g @eddybean/ccr
 ```
 
 Requires Node.js 18 or later.
 
 ## Usage
+
+Commands below use `ccr`. If you haven't installed globally, you can also run any command with `npx @eddybean/ccr` instead (e.g. `npx @eddybean/ccr add`).
 
 ### `ccr add` — Add rules
 

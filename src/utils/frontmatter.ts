@@ -22,8 +22,10 @@ export function parseFrontmatter(content: string): {
     const body = fmMatch[2].trim();
 
     // paths: の値を行単位で抽出（クォートあり・なし両対応）
-    const pathsMatch = fmBlock.match(/^paths:\s*["']?(.*?)["']?\s*$/m);
-    const paths = pathsMatch ? pathsMatch[1].trim() || undefined : undefined;
+    // クォートありは後方参照でペアを強制（末尾クォートが残るバグを防ぐ）
+    const pathsMatch =
+      fmBlock.match(/^paths:\s*(['"])(.*?)\1\s*$/m) ?? fmBlock.match(/^paths:\s*([^'"\s].*?)\s*$/m);
+    const paths = pathsMatch ? (pathsMatch[2] ?? pathsMatch[1])?.trim() || undefined : undefined;
 
     return { paths, data: paths ? { paths } : {}, body };
   }

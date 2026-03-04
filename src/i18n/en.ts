@@ -76,8 +76,9 @@ export const messages = {
   'manage.done': 'Done',
 
   // github.ts
-  'github.rateLimited':
-    'GitHub API rate limit exceeded or unauthorized. Set GITHUB_TOKEN environment variable.',
+  'github.rateLimited': 'GitHub API rate limit exceeded. Set GITHUB_TOKEN environment variable.',
+  'github.unauthorized':
+    'GitHub API authentication failed. Set a valid GITHUB_TOKEN environment variable.',
   'github.apiError': 'GitHub API error:',
   'github.invalidUrl': 'Invalid GitHub URL:',
 } as const;

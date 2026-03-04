@@ -3,6 +3,7 @@ import { vi } from 'vitest';
 
 export interface FsMockSetup {
   existsSync: MockedFunction<typeof import('node:fs').existsSync>;
+  statSync: MockedFunction<typeof import('node:fs').statSync>;
   readdirSync: MockedFunction<typeof import('node:fs').readdirSync>;
   readFileSync: MockedFunction<typeof import('node:fs').readFileSync>;
   writeFileSync: MockedFunction<typeof import('node:fs').writeFileSync>;
@@ -14,6 +15,7 @@ export interface FsMockSetup {
 export function setupFsMock(fs: typeof import('node:fs')): FsMockSetup {
   return {
     existsSync: vi.mocked(fs.existsSync),
+    statSync: vi.mocked(fs.statSync),
     readdirSync: vi.mocked(fs.readdirSync),
     readFileSync: vi.mocked(fs.readFileSync),
     writeFileSync: vi.mocked(fs.writeFileSync),
@@ -66,9 +68,24 @@ export class VirtualFs {
     this.store.clear();
   }
 
+  isDirectory(path: string): boolean {
+    if (this.store.has(path)) return false; // ファイルとして登録されている
+    const dirPath = path.endsWith('/') ? path : `${path}/`;
+    for (const key of this.store.keys()) {
+      if (key.startsWith(dirPath)) return true;
+    }
+    return false;
+  }
+
   /** FsMockSetup に VirtualFs の実装をバインドする。beforeEach で呼び出す */
   bindTo(mock: FsMockSetup): void {
     mock.existsSync.mockImplementation((p) => this.exists(String(p)));
+    mock.statSync.mockImplementation(
+      (p) =>
+        ({ isDirectory: () => this.isDirectory(String(p)) }) as ReturnType<
+          typeof import('node:fs').statSync
+        >,
+    );
     mock.readdirSync.mockImplementation((p) => this.list(String(p)) as any);
     mock.readFileSync.mockImplementation((p, _enc) => this.read(String(p)));
     mock.writeFileSync.mockImplementation((p, content) => {

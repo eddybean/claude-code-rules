@@ -79,7 +79,9 @@ export const messages: Record<MessageKey, string> = {
 
   // github.ts
   'github.rateLimited':
-    'GitHub API のレート制限に達したか、認証が必要です。GITHUB_TOKEN 環境変数を設定してください。',
+    'GitHub API のレート制限に達しました。GITHUB_TOKEN 環境変数を設定してください。',
+  'github.unauthorized':
+    'GitHub API の認証に失敗しました。有効な GITHUB_TOKEN 環境変数を設定してください。',
   'github.apiError': 'GitHub API エラー:',
   'github.invalidUrl': '無効な GitHub URL:',
 };

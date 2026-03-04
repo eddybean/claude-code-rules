@@ -150,6 +150,20 @@ describe('moveRule', () => {
     moveRule('react.md', 'workspace', 'user');
     expect(vfs.read(`${US_DIR}/react.md`)).toBe('# React Rules');
   });
+
+  it('削除に失敗した場合はコピー先を削除してロールバックしエラーをスローする', () => {
+    vfs.write(`${WS_DIR}/typescript.md`, '# TypeScript');
+    // unlinkSync を一時的に失敗させる
+    fsMock.unlinkSync.mockImplementationOnce(() => {
+      throw new Error('EPERM: operation not permitted');
+    });
+
+    expect(() => moveRule('typescript.md', 'workspace', 'user')).toThrow('EPERM');
+    // コピー先にファイルが残っていない（ロールバック成功）
+    expect(vfs.exists(`${US_DIR}/typescript.md`)).toBe(false);
+    // 元ファイルは残っている
+    expect(vfs.exists(`${WS_DIR}/typescript.md`)).toBe(true);
+  });
 });
 
 describe('updateRulePaths', () => {

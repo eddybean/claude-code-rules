@@ -13,6 +13,10 @@ const fsMock = setupFsMock(fs);
 beforeEach(() => {
   // デフォルトはすべて false（.claude が見つからない）
   fsMock.existsSync.mockReturnValue(false);
+  // デフォルトでは existsSync が true の場合はディレクトリとみなす
+  fsMock.statSync.mockReturnValue({ isDirectory: () => true } as ReturnType<
+    typeof import('node:fs').statSync
+  >);
 });
 
 describe('findWorkspaceRoot', () => {
@@ -40,6 +44,15 @@ describe('findWorkspaceRoot', () => {
   it('ルートディレクトリには到達しても見つからない場合は null を返す', () => {
     fsMock.existsSync.mockReturnValue(false);
     expect(findWorkspaceRoot('/')).toBeNull();
+  });
+
+  it('.claude という名前のファイルがある場合はワークスペースルートと誤認しない', () => {
+    // existsSync は true を返すが statSync が isDirectory: false を返す
+    fsMock.existsSync.mockImplementation((p) => String(p) === '/project/.claude');
+    fsMock.statSync.mockImplementation(
+      () => ({ isDirectory: () => false }) as ReturnType<typeof import('node:fs').statSync>,
+    );
+    expect(findWorkspaceRoot('/project')).toBeNull();
   });
 });
 
