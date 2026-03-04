@@ -25,11 +25,11 @@ async function githubFetch<T>(url: string): Promise<T> {
   return res.json() as Promise<T>;
 }
 
-export async function listGithubRules(repoUrl: string, rulesPath = 'rules'): Promise<Rule[]> {
-  const parsed = parseGitHubUrl(repoUrl);
-  if (!parsed) throw new Error(`${t('github.invalidUrl')} ${repoUrl}`);
-
-  const { owner, repo } = parsed;
+async function fetchRulesFromPath(
+  owner: string,
+  repo: string,
+  rulesPath: string,
+): Promise<Rule[]> {
   const apiUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${rulesPath}`;
 
   let entries: GitHubFileEntry[];
@@ -63,30 +63,56 @@ export async function listGithubRules(repoUrl: string, rulesPath = 'rules'): Pro
   return rules;
 }
 
+export async function listGithubRules(repoUrl: string): Promise<Rule[]> {
+  const parsed = parseGitHubUrl(repoUrl);
+  if (!parsed) throw new Error(`${t('github.invalidUrl')} ${repoUrl}`);
+
+  const { owner, repo } = parsed;
+
+  // rules/ と .claude/rules/ の両方を探索してマージ（重複はfilenameで除去）
+  const [fromRules, fromClaudeRules] = await Promise.all([
+    fetchRulesFromPath(owner, repo, 'rules'),
+    fetchRulesFromPath(owner, repo, '.claude/rules'),
+  ]);
+
+  const seen = new Set<string>();
+  const merged: Rule[] = [];
+  for (const rule of [...fromRules, ...fromClaudeRules]) {
+    if (!seen.has(rule.filename)) {
+      seen.add(rule.filename);
+      merged.push(rule);
+    }
+  }
+  return merged;
+}
+
 export async function fetchGithubRule(
   repoUrl: string,
   filename: string,
-  rulesPath = 'rules',
 ): Promise<Rule | undefined> {
   const parsed = parseGitHubUrl(repoUrl);
   if (!parsed) throw new Error(`${t('github.invalidUrl')} ${repoUrl}`);
 
   const { owner, repo } = parsed;
-  const apiUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${rulesPath}/${filename}`;
 
-  try {
-    const fileData = await githubFetch<GitHubFileContent>(apiUrl);
-    const content = Buffer.from(fileData.content, 'base64').toString('utf-8');
-    const { paths, body } = parseFrontmatter(content);
-    return {
-      name: filename.replace(/\.md$/, ''),
-      filename,
-      content: body,
-      paths,
-    };
-  } catch {
-    return undefined;
+  // rules/ → .claude/rules/ の順に試す
+  for (const rulesPath of ['rules', '.claude/rules']) {
+    const apiUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${rulesPath}/${filename}`;
+    try {
+      const fileData = await githubFetch<GitHubFileContent>(apiUrl);
+      const content = Buffer.from(fileData.content, 'base64').toString('utf-8');
+      const { paths, body } = parseFrontmatter(content);
+      return {
+        name: filename.replace(/\.md$/, ''),
+        filename,
+        content: body,
+        paths,
+      };
+    } catch {
+      // 次のパスを試す
+    }
   }
+  return undefined;
 }
 
 export function isGithubUrl(url: string): boolean {

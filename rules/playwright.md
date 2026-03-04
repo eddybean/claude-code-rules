@@ -1,19 +1,19 @@
-# Playwright MCP使用ルール
+# Playwright MCP Usage Rules
 
-## 絶対的な禁止事項
+## Absolute Restrictions
 
-1. **いかなる形式のコード実行も禁止**
-   - Python、JavaScript、Bash等でのブラウザ操作
-   - MCPツールを調査するためのコード実行
-   - subprocessやコマンド実行によるアプローチ
+- Never execute code (Python, JavaScript, Bash, subprocess) to drive the browser
+- Never run code to "investigate" what MCP tools are available
+- The only permitted browser interaction is direct MCP tool calls
 
-2. **利用可能なのはMCPツールの直接呼び出しのみ**
-   - playwright:browser_navigate
-   - playwright:browser_screenshot
-   - 他のPlaywright MCPツール
+## Permitted MCP Tools
 
-3. **エラー時は即座に報告**
-   - 回避策を探さない
-   - 代替手段を実行しない
-   - エラーメッセージをそのまま伝える
-   
+- `playwright:browser_navigate`
+- `playwright:browser_screenshot`
+- Other Playwright MCP tools as documented
+
+## Error Handling
+
+- On any error, report it immediately with the exact error message
+- Do not search for workarounds or alternative approaches
+- Do not retry with a different execution method

@@ -1,26 +1,36 @@
-# React Best Practices
+# React Best Practices (v19)
 
-## コンポーネント設計
+## Component Design
 
-- 関数コンポーネントを使用し、クラスコンポーネントは避ける
-- 1 コンポーネント = 1 責任の原則を守る
-- Props の型は TypeScript interface または type で明示的に定義する
-- デフォルト Props は関数の引数デフォルト値で指定する
+- Default to Server Components when using a framework (Next.js, etc.); add `'use client'` only for interactivity, browser APIs, or local state
+- Place `'use client'` boundaries as low in the tree as possible — high placement forces large static subtrees to hydrate
+- Pass `ref` directly as a prop in React 19; `forwardRef` is deprecated
+- One component, one responsibility — split when a component handles two distinct concerns
 
-## フック
+## Hooks and Memoization
 
-- カスタムフックは `use` プレフィックスで命名する
-- `useEffect` の依存配列は常に正確に指定する
-- `useMemo` と `useCallback` は計測後にパフォーマンス最適化として使う
+- Do not add `useMemo`, `useCallback`, or `React.memo` preemptively — profile with React DevTools Profiler first
+- The React Compiler (stable in v19) auto-memoizes when enabled; manual memoization fights it
+- `useEffect` dependency arrays must be accurate; never silence the exhaustive-deps lint rule
+- `useTransition` marks state updates as low-priority and causes double renders — use only for search/filter UI where typing latency matters; do not apply it broadly
 
-## 状態管理
+## Async State and Forms (React 19)
 
-- ローカル状態は `useState`、共有状態は Context または外部ライブラリを検討する
-- 状態の派生値は `useMemo` で計算するか、レンダリング中に計算する
-- 状態の更新は不変性を保持してイミュータブルに行う
+- Use `useActionState` for async form submissions — it provides state, a dispatch function, and an `isPending` flag in one call
+- Use `useOptimistic` for instant UI feedback before a server response; the optimistic state reverts automatically on error
+- Use `useFormStatus` inside a form to read the parent form's pending state without prop drilling
+- Return structured error state from Server Actions rather than throwing; thrown errors reach the nearest error boundary, not the form UI
 
-## JSX
+## State Management
 
-- JSX 内のロジックは最小限にし、複雑な条件分岐は変数に切り出す
-- リストレンダリングには必ず安定した `key` を指定する（インデックスは最終手段）
-- イベントハンドラは `handle` プレフィックスで命名する（例: `handleClick`）
+- Start with `useState` for local state and `useReducer` for complex multi-field state
+- Use React Query (or SWR) for server state — it handles caching, deduplication, and background refetch
+- Reach for a global store (Zustand, Jotai) only for state that is genuinely app-wide; most state is not
+- Derive values during render instead of synchronizing with a second `useState`
+
+## Suspense and Error Boundaries
+
+- Wrap async subtrees in `Suspense` to enable streaming and progressive rendering
+- Group logically related async components under one `Suspense` boundary — too-granular boundaries create loading waterfalls
+- Use `ErrorBoundary` (via `react-error-boundary`) around risky subtrees; provide a "Try again" action, not just an error message
+- Error boundaries do not catch errors in event handlers or async code — handle those with `try/catch`

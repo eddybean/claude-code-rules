@@ -30,8 +30,9 @@ program
 program
   .command('list')
   .description(t('cli.list.desc'))
-  .action(() => {
-    listCommand();
+  .option('-b, --bundled', t('cli.list.opt.bundled'))
+  .action((opts: { bundled?: boolean }) => {
+    listCommand(opts);
   });
 
 program

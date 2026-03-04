@@ -1,26 +1,25 @@
 # Testing Best Practices
 
-## テスト設計
+## Test Design
 
-- AAA パターン（Arrange, Act, Assert）でテストを構造化する
-- 1 テスト = 1 アサーションの原則を基本とする
-- テスト名は「何を・どのような条件で・どうなるか」を明確に記述する
-- 実装の詳細ではなく、振る舞いをテストする
+- Structure tests with AAA: Arrange, Act, Assert — one assertion per test as the default
+- Name tests as "given [context], when [action], then [outcome]"
+- Test observable behavior, not internal implementation details
 
-## ユニットテスト
+## Unit Tests
 
-- 外部依存（DB、API、ファイルシステム）はモックで置き換える
-- 境界値・エッジケース・エラーケースを必ずカバーする
-- テストは独立して実行できるようにし、順序依存を排除する
+- Replace external dependencies (DB, API, filesystem) with mocks or fakes
+- Always cover boundary values, edge cases, and error paths
+- Tests must be order-independent and runnable in isolation
 
-## 統合テスト・E2E テスト
+## Integration and E2E Tests
 
-- 重要なユーザーフローをカバーする E2E テストを優先する
-- テスト環境は本番環境に近い状態を保つ
-- テストデータは各テストで独立して用意・クリーンアップする
+- Prioritize E2E coverage of critical user flows over exhaustive unit coverage
+- Keep the test environment as close to production as possible
+- Set up and tear down test data within each test — no shared mutable state
 
-## カバレッジ
+## Coverage
 
-- カバレッジ率の数値より、重要なロジックがテストされているかを優先する
-- クリティカルなビジネスロジックは 80% 以上のカバレッジを目指す
-- カバレッジレポートを CI で自動生成して可視化する
+- Coverage percentage is a proxy metric — prioritize coverage of critical business logic
+- Aim for 80%+ coverage on core logic paths
+- Generate coverage reports in CI and fail the build when it regresses

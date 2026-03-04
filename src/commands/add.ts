@@ -6,10 +6,11 @@ import { writeRule, ruleExists } from '../utils/rules.js';
 import { recordInstall } from '../utils/config.js';
 import type { Rule, RuleLocation, AddOptions } from '../types.js';
 
-async function promptPathsFilter(): Promise<string | undefined> {
+async function promptPathsFilter(defaultPaths?: string): Promise<string | undefined> {
   const value = await p.text({
     message: t('add.paths.message'),
     placeholder: t('add.paths.placeholder'),
+    initialValue: defaultPaths ?? '',
   });
   if (p.isCancel(value)) return undefined;
   return value?.trim() || undefined;
@@ -141,7 +142,7 @@ async function interactiveAdd(): Promise<void> {
 
   for (const ruleName of selected) {
     const rule = rules.find((r) => r.name === ruleName)!;
-    const customPaths = await promptPathsFilter();
+    const customPaths = await promptPathsFilter(rule.paths);
     await installRule(rule, location, sourceId, customPaths);
   }
 

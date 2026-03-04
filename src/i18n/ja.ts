@@ -50,7 +50,9 @@ export const messages: Record<MessageKey, string> = {
   // list.ts
   'list.workspace': 'Workspace rules',
   'list.user': 'User rules',
+  'list.bundled': '同梱ルール',
   'list.empty': '(なし)',
+  'cli.list.opt.bundled': '同梱ルールの一覧を表示',
 
   // manage.ts
   'manage.intro': 'ccr manage - ルールを管理',

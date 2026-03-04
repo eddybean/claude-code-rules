@@ -48,7 +48,9 @@ export const messages = {
   // list.ts
   'list.workspace': 'Workspace rules',
   'list.user': 'User rules',
+  'list.bundled': 'Bundled rules',
   'list.empty': '(none)',
+  'cli.list.opt.bundled': 'Show available bundled rules',
 
   // manage.ts
   'manage.intro': 'ccr manage - Manage rules',

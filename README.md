@@ -100,6 +100,24 @@ User rules (~/.claude/rules/)
   ✓ security  (bundled)
 ```
 
+**Show available bundled rules** with `--bundled` (`-b`):
+
+```bash
+ccr list --bundled
+```
+
+```
+Bundled rules
+─────────────
+  • typescript [paths: **/*.{ts,tsx}]
+  • react
+  • nextjs
+  • go [paths: **/*.go]
+  • security
+  • testing
+  ...
+```
+
 ### `ccr manage` — Manage installed rules
 
 ```bash
@@ -121,8 +139,20 @@ The following rules are bundled with ccr and available out of the box:
 |---|---|
 | `typescript` | TypeScript best practices |
 | `react` | React / JSX patterns |
+| `nextjs` | Next.js 15 / App Router best practices |
+| `python` | Python best practices |
+| `go` | Go best practices |
+| `rust` | Rust best practices |
 | `security` | Security guidelines |
 | `testing` | Testing best practices |
+| `tdd` | Test-Driven Development (Red-Green-Refactor) |
+| `ddd` | Domain-Driven Design |
+| `clean-architecture` | Clean Architecture and SOLID principles |
+| `documentation` | Documentation best practices |
+| `rest-api` | REST API design guidelines |
+| `graphql` | GraphQL best practices |
+| `git-workflow` | Git branching, commits, and PR guidelines |
+| `playwright` | Playwright MCP usage rules |
 
 ## GitHub repository format
 

@@ -1,25 +1,29 @@
+---
+paths: **/*.{ts,tsx}
+---
+
 # TypeScript Best Practices
 
-## 型安全性
+## Type Safety
 
-- `any` 型の使用を避け、`unknown` を使って明示的なバリデーションを行う
-- 型アサーション (`as`) は最小限に留め、型ガードを優先する
-- `strict: true` を `tsconfig.json` で有効にする
+- Avoid `any`; use `unknown` with explicit type guards instead
+- Minimize type assertions (`as`); prefer type narrowing with guards
+- Enable `strict: true` in `tsconfig.json`
 
-## 関数・変数
+## Functions and Variables
 
-- 関数の引数と戻り値には型を明示的に記述する
-- `const` を優先し、再代入が必要な場合のみ `let` を使う
-- オブジェクトのスプレッド演算子でイミュータブルに更新する
+- Explicitly annotate function parameters and return types
+- Prefer `const`; use `let` only when reassignment is necessary
+- Use object spread for immutable updates instead of mutation
 
-## モジュール
+## Modules
 
-- named export を優先し、default export は避ける
-- barrel exports (`index.ts`) はパフォーマンスに注意して使用する
-- 循環依存を避けるためにモジュール構成を整理する
+- Prefer named exports over default exports
+- Use barrel exports (`index.ts`) cautiously — they can hurt tree-shaking
+- Avoid circular dependencies by keeping module boundaries clean
 
-## エラーハンドリング
+## Error Handling
 
-- `Error` を継承したカスタムエラークラスを使う
-- `catch` ブロックでは `unknown` 型として扱い、型ガードで処理する
-- Promise のエラーは必ず `.catch()` か `try/catch` で処理する
+- Use custom error classes that extend `Error`
+- In `catch` blocks, treat the caught value as `unknown` and narrow with type guards
+- Always handle Promise rejections with `.catch()` or `try/catch`
