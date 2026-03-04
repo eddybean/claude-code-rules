@@ -1,0 +1,94 @@
+import { t } from '../i18n/index.js';
+import { parseFrontmatter } from '../utils/frontmatter.js';
+import type { GitHubFileEntry, GitHubFileContent, Rule } from '../types.js';
+
+function parseGitHubUrl(url: string): { owner: string; repo: string } | null {
+  const match = url.match(/github\.com\/([^/]+)\/([^/]+)/);
+  if (!match) return null;
+  return { owner: match[1], repo: match[2].replace(/\.git$/, '') };
+}
+
+async function githubFetch<T>(url: string): Promise<T> {
+  const res = await fetch(url, {
+    headers: {
+      Accept: 'application/vnd.github+json',
+      'User-Agent': 'claude-code-rules',
+    },
+  });
+
+  if (res.status === 403 || res.status === 401) {
+    throw new Error(t('github.rateLimited'));
+  }
+  if (!res.ok) {
+    throw new Error(`${t('github.apiError')} ${res.status} ${res.statusText}`);
+  }
+  return res.json() as Promise<T>;
+}
+
+export async function listGithubRules(repoUrl: string, rulesPath = 'rules'): Promise<Rule[]> {
+  const parsed = parseGitHubUrl(repoUrl);
+  if (!parsed) throw new Error(`${t('github.invalidUrl')} ${repoUrl}`);
+
+  const { owner, repo } = parsed;
+  const apiUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${rulesPath}`;
+
+  let entries: GitHubFileEntry[];
+  try {
+    entries = await githubFetch<GitHubFileEntry[]>(apiUrl);
+  } catch (err) {
+    if (err instanceof Error && err.message.includes('404')) {
+      return [];
+    }
+    throw err;
+  }
+
+  const mdFiles = entries.filter((e) => e.type === 'file' && e.name.endsWith('.md'));
+
+  const rules: Rule[] = [];
+  for (const file of mdFiles) {
+    try {
+      const fileData = await githubFetch<GitHubFileContent>(file.url);
+      const content = Buffer.from(fileData.content, 'base64').toString('utf-8');
+      const { paths, body } = parseFrontmatter(content);
+      rules.push({
+        name: file.name.replace(/\.md$/, ''),
+        filename: file.name,
+        content: body,
+        paths,
+      });
+    } catch {
+      // 個別ファイルの取得失敗はスキップ
+    }
+  }
+  return rules;
+}
+
+export async function fetchGithubRule(
+  repoUrl: string,
+  filename: string,
+  rulesPath = 'rules',
+): Promise<Rule | undefined> {
+  const parsed = parseGitHubUrl(repoUrl);
+  if (!parsed) throw new Error(`${t('github.invalidUrl')} ${repoUrl}`);
+
+  const { owner, repo } = parsed;
+  const apiUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${rulesPath}/${filename}`;
+
+  try {
+    const fileData = await githubFetch<GitHubFileContent>(apiUrl);
+    const content = Buffer.from(fileData.content, 'base64').toString('utf-8');
+    const { paths, body } = parseFrontmatter(content);
+    return {
+      name: filename.replace(/\.md$/, ''),
+      filename,
+      content: body,
+      paths,
+    };
+  } catch {
+    return undefined;
+  }
+}
+
+export function isGithubUrl(url: string): boolean {
+  return /^https?:\/\/github\.com\//.test(url);
+}
