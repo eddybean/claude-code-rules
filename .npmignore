@@ -6,3 +6,6 @@ tsup.config.ts
 .gitignore
 *.local
 .DS_Store
+biome.json
+CLAUDE.md
+vitest.config.ts

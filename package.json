@@ -1,7 +1,10 @@
 {
-  "name": "claude-code-rules",
+  "name": "@eddybean/ccr",
   "version": "0.1.0",
   "description": "Claude Code rules manager - discover, install, and manage .claude/rules/ files",
+  "publishConfig": {
+    "access": "public"
+  },
   "type": "module",
   "bin": {
     "ccr": "./dist/cli.js"
@@ -13,7 +16,17 @@
   "scripts": {
     "build": "tsup",
     "dev": "tsx src/cli.ts",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "vitest",
+    "test:run": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "lint": "biome lint src/",
+    "lint:fix": "biome lint --write src/",
+    "format": "biome format --write src/ vitest.config.ts tsup.config.ts",
+    "format:check": "biome format src/ vitest.config.ts tsup.config.ts",
+    "check": "biome check src/",
+    "check:fix": "biome check --write src/",
+    "ci": "npm run typecheck && npm run check && npm run test:run"
   },
   "engines": {
     "node": ">=18"
@@ -24,9 +37,12 @@
     "gray-matter": "^4.0.3"
   },
   "devDependencies": {
+    "@biomejs/biome": "^2.4.5",
     "@types/node": "^20.0.0",
+    "@vitest/coverage-v8": "^4.0.18",
     "tsup": "^8.0.0",
     "tsx": "^4.0.0",
-    "typescript": "^5.0.0"
+    "typescript": "^5.0.0",
+    "vitest": "^4.0.18"
   }
 }

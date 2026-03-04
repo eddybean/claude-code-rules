@@ -1,8 +1,7 @@
 import { t } from '../i18n/index.js';
-import { listRules } from '../utils/rules.js';
-import { getInstallInfo } from '../utils/config.js';
-import { getRulesDir } from '../utils/paths.js';
 import { listBundledRules } from '../sources/bundled.js';
+import { getRulesDir } from '../utils/paths.js';
+import { listRules } from '../utils/rules.js';
 
 export function listCommand(opts: { bundled?: boolean } = {}): void {
   if (opts.bundled) {
@@ -26,9 +25,8 @@ export function listCommand(opts: { bundled?: boolean } = {}): void {
 
   for (const location of locations) {
     const dir = getRulesDir(location);
-    const label = location === 'workspace'
-      ? `${t('list.workspace')} (${dir})`
-      : `${t('list.user')} (${dir})`;
+    const label =
+      location === 'workspace' ? `${t('list.workspace')} (${dir})` : `${t('list.user')} (${dir})`;
 
     console.log(`\n${label}`);
     console.log('─'.repeat(label.length));
@@ -40,12 +38,8 @@ export function listCommand(opts: { bundled?: boolean } = {}): void {
     }
 
     for (const rule of rules) {
-      const info = getInstallInfo(rule.filename, location);
       const pathsTag = rule.paths ? ` [paths: ${rule.paths}]` : '';
-      const sourceTag = info
-        ? ` (${info.source === 'bundled' ? 'bundled' : info.source})`
-        : '';
-      console.log(`  ✓ ${rule.name}${pathsTag}${sourceTag}`);
+      console.log(`  ✓ ${rule.name}${pathsTag}`);
     }
   }
   console.log('');

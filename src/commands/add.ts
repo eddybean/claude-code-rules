@@ -1,10 +1,9 @@
 import * as p from '@clack/prompts';
 import { t } from '../i18n/index.js';
-import { listBundledRules, getBundledRule } from '../sources/bundled.js';
-import { listGithubRules, fetchGithubRule, isGithubUrl } from '../sources/github.js';
-import { writeRule, ruleExists } from '../utils/rules.js';
-import { recordInstall } from '../utils/config.js';
-import type { Rule, RuleLocation, AddOptions } from '../types.js';
+import { getBundledRule, listBundledRules } from '../sources/bundled.js';
+import { fetchGithubRule, isGithubUrl, listGithubRules } from '../sources/github.js';
+import type { AddOptions, Rule, RuleLocation } from '../types.js';
+import { ruleExists, writeRule } from '../utils/rules.js';
 
 async function promptPathsFilter(defaultPaths?: string): Promise<string | undefined> {
   const value = await p.text({
@@ -16,7 +15,9 @@ async function promptPathsFilter(defaultPaths?: string): Promise<string | undefi
   return value?.trim() || undefined;
 }
 
-async function promptConflictResolution(filename: string): Promise<'overwrite' | 'skip' | 'rename' | null> {
+async function promptConflictResolution(
+  filename: string,
+): Promise<'overwrite' | 'skip' | 'rename' | null> {
   const action = await p.select({
     message: `"${filename}" ${t('add.conflict.message')}`,
     options: [
@@ -32,7 +33,7 @@ async function promptConflictResolution(filename: string): Promise<'overwrite' |
 async function promptNewFilename(original: string): Promise<string | null> {
   const name = await p.text({
     message: t('add.rename.message'),
-    placeholder: original.replace(/\.md$/, '') + '-custom',
+    placeholder: `${original.replace(/\.md$/, '')}-custom`,
   });
   if (p.isCancel(name) || !name) return null;
   return name.endsWith('.md') ? name : `${name}.md`;
@@ -41,7 +42,6 @@ async function promptNewFilename(original: string): Promise<string | null> {
 async function installRule(
   rule: Rule,
   location: RuleLocation,
-  source: string,
   overridePaths?: string,
 ): Promise<void> {
   const paths = overridePaths !== undefined ? overridePaths : rule.paths;
@@ -61,7 +61,6 @@ async function installRule(
   }
 
   writeRule(filename, rule.content, paths, location);
-  recordInstall(filename, source, location);
   p.log.success(`${t('add.installed')} ${filename}${paths ? ` [paths: ${paths}]` : ''}`);
 }
 
@@ -87,10 +86,12 @@ async function interactiveAdd(): Promise<void> {
       { value: 'github', label: t('add.source.github') },
     ],
   });
-  if (p.isCancel(sourceType)) { p.cancel(t('add.cancelled')); return; }
+  if (p.isCancel(sourceType)) {
+    p.cancel(t('add.cancelled'));
+    return;
+  }
 
   let rules: Rule[] = [];
-  let sourceId = 'bundled';
 
   if (sourceType === 'bundled') {
     rules = listBundledRules();
@@ -102,11 +103,12 @@ async function interactiveAdd(): Promise<void> {
     const url = await p.text({
       message: t('add.github.urlMessage'),
       placeholder: t('add.github.urlPlaceholder'),
-      validate: (v) => isGithubUrl(v) ? undefined : t('add.github.urlInvalid'),
+      validate: (v) => (isGithubUrl(v) ? undefined : t('add.github.urlInvalid')),
     });
-    if (p.isCancel(url)) { p.cancel(t('add.cancelled')); return; }
-    sourceId = url;
-
+    if (p.isCancel(url)) {
+      p.cancel(t('add.cancelled'));
+      return;
+    }
     const spinner = p.spinner();
     spinner.start(t('add.github.fetching'));
     try {
@@ -138,12 +140,16 @@ async function interactiveAdd(): Promise<void> {
   }
 
   const location = await selectLocation();
-  if (!location) { p.cancel(t('add.cancelled')); return; }
+  if (!location) {
+    p.cancel(t('add.cancelled'));
+    return;
+  }
 
   for (const ruleName of selected) {
-    const rule = rules.find((r) => r.name === ruleName)!;
+    const rule = rules.find((r) => r.name === ruleName);
+    if (!rule) continue;
     const customPaths = await promptPathsFilter(rule.paths);
-    await installRule(rule, location, sourceId, customPaths);
+    await installRule(rule, location, customPaths);
   }
 
   p.outro(t('add.done'));
@@ -189,11 +195,15 @@ export async function addCommand(ruleName: string | undefined, opts: AddOptions)
         message: t('add.select.messageShort'),
         options: rules.map((r) => ({ value: r.name, label: r.name })),
       });
-      if (p.isCancel(selected)) { p.cancel(t('add.cancelled')); return; }
+      if (p.isCancel(selected)) {
+        p.cancel(t('add.cancelled'));
+        return;
+      }
 
       for (const name of selected) {
-        const rule = rules.find((r) => r.name === name)!;
-        await installRule(rule, location, opts.source!, opts.path);
+        const rule = rules.find((r) => r.name === name);
+        if (!rule) continue;
+        await installRule(rule, location, opts.path);
       }
       p.outro(t('add.done'));
       return;
@@ -206,15 +216,21 @@ export async function addCommand(ruleName: string | undefined, opts: AddOptions)
       console.error(`${t('add.bundled.notFound')} "${ruleName}" ${t('add.notFound')}`);
       process.exit(1);
     }
-    await installRule(rule, location, opts.source, opts.path);
+    await installRule(rule, location, opts.path);
     return;
   }
 
   // 同梱ルール直接モード
-  const rule = getBundledRule(ruleName!);
+  if (!ruleName) return;
+  const rule = getBundledRule(ruleName);
   if (!rule) {
     console.error(`${t('add.bundled.notFound')} "${ruleName}"`);
-    console.error(t('add.bundled.available'), listBundledRules().map((r) => r.name).join(', '));
+    console.error(
+      t('add.bundled.available'),
+      listBundledRules()
+        .map((r) => r.name)
+        .join(', '),
+    );
     process.exit(1);
   }
 
@@ -234,6 +250,5 @@ export async function addCommand(ruleName: string | undefined, opts: AddOptions)
   }
 
   writeRule(rule.filename, rule.content, opts.path ?? rule.paths, location);
-  recordInstall(rule.filename, 'bundled', location);
   console.log(`${t('add.installed')} ${rule.filename}${opts.path ? ` [paths: ${opts.path}]` : ''}`);
 }

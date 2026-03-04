@@ -1,12 +1,13 @@
 import * as p from '@clack/prompts';
 import { t } from '../i18n/index.js';
-import { listRules, copyRule, moveRule, deleteRule, updateRulePaths } from '../utils/rules.js';
-import { recordInstall, removeRecord, getInstallInfo } from '../utils/config.js';
 import type { RuleLocation } from '../types.js';
+import { copyRule, deleteRule, listRules, moveRule, updateRulePaths } from '../utils/rules.js';
 
 function formatRuleLabel(name: string, paths?: string, location?: RuleLocation): string {
   const pathsTag = paths ? ` [paths: ${paths}]` : '';
-  const locTag = location ? ` (${t(location === 'workspace' ? 'manage.workspace' : 'manage.user')})` : '';
+  const locTag = location
+    ? ` (${t(location === 'workspace' ? 'manage.workspace' : 'manage.user')})`
+    : '';
   return `${name}${pathsTag}${locTag}`;
 }
 
@@ -42,7 +43,9 @@ export async function manageCommand(): Promise<void> {
     const [locationStr, filename] = (selected as string).split(':') as [string, string];
     const location = locationStr as RuleLocation;
     const otherLocation: RuleLocation = location === 'workspace' ? 'user' : 'workspace';
-    const otherLabel = t(otherLocation === 'workspace' ? 'manage.location.workspace' : 'manage.location.user');
+    const otherLabel = t(
+      otherLocation === 'workspace' ? 'manage.location.workspace' : 'manage.location.user',
+    );
 
     const action = await p.select({
       message: `"${filename}" ${t('manage.action.message')}`,
@@ -59,8 +62,6 @@ export async function manageCommand(): Promise<void> {
     if (action === 'copy') {
       try {
         copyRule(filename, location, otherLocation);
-        const info = getInstallInfo(filename, location);
-        recordInstall(filename, info?.source ?? 'bundled', otherLocation);
         p.log.success(`${otherLabel} ${t('manage.copied')} ${filename}`);
       } catch (err) {
         p.log.error(err instanceof Error ? err.message : String(err));
@@ -68,17 +69,12 @@ export async function manageCommand(): Promise<void> {
     } else if (action === 'move') {
       try {
         moveRule(filename, location, otherLocation);
-        const info = getInstallInfo(filename, location);
-        recordInstall(filename, info?.source ?? 'bundled', otherLocation);
-        removeRecord(filename, location);
         p.log.success(`${otherLabel} ${t('manage.moved')} ${filename}`);
       } catch (err) {
         p.log.error(err instanceof Error ? err.message : String(err));
       }
     } else if (action === 'edit-paths') {
-      const currentRule = [...workspaceRules, ...userRules].find(
-        (r) => r.filename === filename,
-      );
+      const currentRule = [...workspaceRules, ...userRules].find((r) => r.filename === filename);
       const currentPaths = currentRule?.paths ?? '';
       const newPaths = await p.text({
         message: t('manage.editPaths.message'),
@@ -96,7 +92,6 @@ export async function manageCommand(): Promise<void> {
       });
       if (!p.isCancel(confirmed) && confirmed) {
         deleteRule(filename, location);
-        removeRecord(filename, location);
         p.log.success(`${t('manage.deleted')} ${filename}`);
       }
     }

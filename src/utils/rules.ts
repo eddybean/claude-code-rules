@@ -1,8 +1,16 @@
-import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync, copyFileSync, unlinkSync } from 'node:fs';
-import { join, basename, extname } from 'node:path';
-import { parseFrontmatter, buildContent } from './frontmatter.js';
-import { getRulesDir } from './paths.js';
+import {
+  copyFileSync,
+  existsSync,
+  mkdirSync,
+  readdirSync,
+  readFileSync,
+  unlinkSync,
+  writeFileSync,
+} from 'node:fs';
+import { basename, extname, join } from 'node:path';
 import type { Rule, RuleLocation } from '../types.js';
+import { buildContent, parseFrontmatter } from './frontmatter.js';
+import { getRulesDir } from './paths.js';
 
 export function listRules(location: RuleLocation): Rule[] {
   const dir = getRulesDir(location);

@@ -1,6 +1,6 @@
 import { existsSync } from 'node:fs';
-import { join, dirname } from 'node:path';
 import { homedir } from 'node:os';
+import { dirname, join } from 'node:path';
 import type { RuleLocation } from '../types.js';
 
 export function findWorkspaceRoot(startDir: string = process.cwd()): string | null {
@@ -25,12 +25,4 @@ export function getRulesDir(location: RuleLocation): string {
     return join(process.cwd(), '.claude', 'rules');
   }
   return join(root, '.claude', 'rules');
-}
-
-export function getConfigPath(location: RuleLocation): string {
-  if (location === 'user') {
-    return join(homedir(), '.claude', 'ccr.json');
-  }
-  const root = findWorkspaceRoot() ?? process.cwd();
-  return join(root, '.claude', 'ccr.json');
 }

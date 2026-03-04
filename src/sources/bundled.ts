@@ -1,18 +1,15 @@
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
-import { join, dirname, basename, extname } from 'node:path';
+import { basename, dirname, extname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { parseFrontmatter } from '../utils/frontmatter.js';
 import type { Rule } from '../types.js';
+import { parseFrontmatter } from '../utils/frontmatter.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
 function getBundledRulesDir(): string {
   // dist/cli.js から実行時: dist/../rules
   // src/cli.ts から実行時: src/../rules
-  const candidates = [
-    join(__dirname, '..', 'rules'),
-    join(__dirname, '..', '..', 'rules'),
-  ];
+  const candidates = [join(__dirname, '..', 'rules'), join(__dirname, '..', '..', 'rules')];
   for (const dir of candidates) {
     if (existsSync(dir)) return dir;
   }

@@ -1,6 +1,6 @@
 import { t } from '../i18n/index.js';
+import type { GitHubFileContent, GitHubFileEntry, Rule } from '../types.js';
 import { parseFrontmatter } from '../utils/frontmatter.js';
-import type { GitHubFileEntry, GitHubFileContent, Rule } from '../types.js';
 
 function parseGitHubUrl(url: string): { owner: string; repo: string } | null {
   const match = url.match(/github\.com\/([^/]+)\/([^/]+)/);
@@ -25,11 +25,7 @@ async function githubFetch<T>(url: string): Promise<T> {
   return res.json() as Promise<T>;
 }
 
-async function fetchRulesFromPath(
-  owner: string,
-  repo: string,
-  rulesPath: string,
-): Promise<Rule[]> {
+async function fetchRulesFromPath(owner: string, repo: string, rulesPath: string): Promise<Rule[]> {
   const apiUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${rulesPath}`;
 
   let entries: GitHubFileEntry[];
