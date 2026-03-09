@@ -44,6 +44,7 @@ export const messages = {
   'add.bundled.notFound': 'Bundled rule not found:',
   'add.bundled.available': 'Available rules:',
   'add.skipped': 'Skipped',
+  'add.writeFailed': 'Failed to write rule file:',
 
   // list.ts
   'list.workspace': 'Workspace rules',

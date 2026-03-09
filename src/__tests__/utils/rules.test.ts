@@ -11,6 +11,7 @@ import * as fs from 'node:fs';
 import {
   copyRule,
   deleteRule,
+  ensureRulesDir,
   listRules,
   moveRule,
   ruleExists,
@@ -163,6 +164,25 @@ describe('moveRule', () => {
     expect(vfs.exists(`${US_DIR}/typescript.md`)).toBe(false);
     // 元ファイルは残っている
     expect(vfs.exists(`${WS_DIR}/typescript.md`)).toBe(true);
+  });
+});
+
+describe('ensureRulesDir', () => {
+  it('ディレクトリが存在しない場合は mkdirSync を呼ぶ', () => {
+    ensureRulesDir('workspace');
+    expect(fsMock.mkdirSync).toHaveBeenCalledWith(WS_DIR, { recursive: true });
+  });
+
+  it('user location でも mkdirSync を呼ぶ', () => {
+    ensureRulesDir('user');
+    expect(fsMock.mkdirSync).toHaveBeenCalledWith(US_DIR, { recursive: true });
+  });
+
+  it('mkdirSync が失敗した場合はエラーをスローする', () => {
+    fsMock.mkdirSync.mockImplementationOnce(() => {
+      throw new Error('EACCES: permission denied');
+    });
+    expect(() => ensureRulesDir('workspace')).toThrow('EACCES');
   });
 });
 

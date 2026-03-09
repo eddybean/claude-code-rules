@@ -6,6 +6,7 @@ vi.mock('@clack/prompts', () => createClackMock());
 vi.mock('../../utils/rules.js', () => ({
   writeRule: vi.fn(),
   ruleExists: vi.fn().mockReturnValue(false),
+  ensureRulesDir: vi.fn(),
 }));
 vi.mock('../../sources/bundled.js', () => ({
   listBundledRules: vi.fn().mockReturnValue([]),
@@ -21,7 +22,7 @@ import * as p from '@clack/prompts';
 import { addCommand } from '../../commands/add.js';
 import { getBundledRule, listBundledRules } from '../../sources/bundled.js';
 import { fetchGithubRule, isGithubUrl } from '../../sources/github.js';
-import { ruleExists, writeRule } from '../../utils/rules.js';
+import { ensureRulesDir, ruleExists, writeRule } from '../../utils/rules.js';
 
 /** process.exit をモックして throw させる（後続コードの実行を防ぐ） */
 function mockProcessExit() {
@@ -170,5 +171,55 @@ describe('addCommand - GitHub ソース直接指定モード', () => {
     } finally {
       exitSpy.mockRestore();
     }
+  });
+});
+
+describe('addCommand - ディレクトリ作成とエラーハンドリング', () => {
+  it('同梱ルール直接指定時に ensureRulesDir を呼ぶ', async () => {
+    vi.mocked(getBundledRule).mockReturnValue(FIXTURE_RULES[0]);
+
+    await addCommand('typescript', {});
+
+    expect(ensureRulesDir).toHaveBeenCalledWith('workspace');
+  });
+
+  it('--user フラグ時に ensureRulesDir を user で呼ぶ', async () => {
+    vi.mocked(getBundledRule).mockReturnValue(FIXTURE_RULES[0]);
+
+    await addCommand('typescript', { user: true });
+
+    expect(ensureRulesDir).toHaveBeenCalledWith('user');
+  });
+
+  it('writeRule が失敗した場合はエラーメッセージを表示する', async () => {
+    const rule = { ...FIXTURE_RULES[0], name: 'testing-err', filename: 'testing-err.md' };
+    vi.mocked(getBundledRule).mockReturnValue(rule);
+    vi.mocked(writeRule).mockImplementationOnce(() => {
+      throw new Error('EACCES: permission denied');
+    });
+
+    await addCommand('testing-err', {});
+
+    expect(console.error).toHaveBeenCalledWith(expect.stringContaining('testing-err.md'));
+  });
+
+  it('writeRule が失敗しても process.exit しない（次のルールを処理できる）', async () => {
+    const rule = { ...FIXTURE_RULES[0], name: 'testing-err2', filename: 'testing-err2.md' };
+    vi.mocked(getBundledRule).mockReturnValue(rule);
+    vi.mocked(writeRule).mockImplementationOnce(() => {
+      throw new Error('EACCES: permission denied');
+    });
+
+    // エラーをスローせずに正常に完了すること
+    await expect(addCommand('testing-err2', {})).resolves.toBeUndefined();
+  });
+
+  it('GitHub 直接指定時にも ensureRulesDir を呼ぶ', async () => {
+    vi.mocked(isGithubUrl).mockReturnValue(true);
+    vi.mocked(fetchGithubRule).mockResolvedValue(FIXTURE_RULES[0]);
+
+    await addCommand('typescript', { source: 'https://github.com/owner/repo' });
+
+    expect(ensureRulesDir).toHaveBeenCalledWith('workspace');
   });
 });
