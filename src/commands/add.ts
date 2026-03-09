@@ -3,7 +3,7 @@ import { t } from '../i18n/index.js';
 import { getBundledRule, listBundledRules } from '../sources/bundled.js';
 import { fetchGithubRule, isGithubUrl, listGithubRules } from '../sources/github.js';
 import type { AddOptions, Rule, RuleLocation } from '../types.js';
-import { ruleExists, writeRule } from '../utils/rules.js';
+import { ensureRulesDir, ruleExists, writeRule } from '../utils/rules.js';
 
 async function promptPathsFilter(defaultPaths?: string): Promise<string | undefined> {
   const value = await p.text({
@@ -60,7 +60,14 @@ async function installRule(
     }
   }
 
-  writeRule(filename, rule.content, paths, location);
+  try {
+    writeRule(filename, rule.content, paths, location);
+  } catch (err) {
+    p.log.error(
+      `${t('add.writeFailed')} ${filename} - ${err instanceof Error ? err.message : String(err)}`,
+    );
+    return;
+  }
   p.log.success(`${t('add.installed')} ${filename}${paths ? ` [paths: ${paths}]` : ''}`);
 }
 
@@ -145,6 +152,8 @@ async function interactiveAdd(): Promise<void> {
     return;
   }
 
+  ensureRulesDir(location);
+
   for (const ruleName of selected) {
     const rule = rules.find((r) => r.name === ruleName);
     if (!rule) continue;
@@ -163,6 +172,7 @@ export async function addCommand(ruleName: string | undefined, opts: AddOptions)
   }
 
   const location: RuleLocation = opts.user ? 'user' : 'workspace';
+  ensureRulesDir(location);
 
   // GitHub ソース直接モード
   if (opts.source) {
@@ -249,6 +259,13 @@ export async function addCommand(ruleName: string | undefined, opts: AddOptions)
     }
   }
 
-  writeRule(rule.filename, rule.content, opts.path ?? rule.paths, location);
+  try {
+    writeRule(rule.filename, rule.content, opts.path ?? rule.paths, location);
+  } catch (err) {
+    console.error(
+      `${t('add.writeFailed')} ${rule.filename} - ${err instanceof Error ? err.message : String(err)}`,
+    );
+    return;
+  }
   console.log(`${t('add.installed')} ${rule.filename}${opts.path ? ` [paths: ${opts.path}]` : ''}`);
 }

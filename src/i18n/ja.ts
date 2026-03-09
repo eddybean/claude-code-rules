@@ -46,6 +46,7 @@ export const messages: Record<MessageKey, string> = {
   'add.bundled.notFound': '同梱ルールが見つかりませんでした:',
   'add.bundled.available': '利用可能なルール:',
   'add.skipped': 'スキップしました',
+  'add.writeFailed': 'ルールファイルの書き込みに失敗しました:',
 
   // list.ts
   'list.workspace': 'Workspace rules',

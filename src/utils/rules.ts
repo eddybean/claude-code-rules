@@ -12,6 +12,11 @@ import type { Rule, RuleLocation } from '../types.js';
 import { buildContent, parseFrontmatter } from './frontmatter.js';
 import { getRulesDir } from './paths.js';
 
+export function ensureRulesDir(location: RuleLocation): void {
+  const dir = getRulesDir(location);
+  mkdirSync(dir, { recursive: true });
+}
+
 export function listRules(location: RuleLocation): Rule[] {
   const dir = getRulesDir(location);
   if (!existsSync(dir)) return [];
