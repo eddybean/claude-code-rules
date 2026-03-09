@@ -1,6 +1,6 @@
 {
   "name": "@eddybean/ccr",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Claude Code rules manager - discover, install, and manage .claude/rules/ files",
   "publishConfig": {
     "access": "public"
